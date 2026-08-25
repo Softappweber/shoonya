@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Terminal - Login</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            width: 400px;
+            text-align: center;
+        }
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 36px;
+            font-weight: bold;
+        }
+        h1 { color: #333; margin-bottom: 10px; font-size: 24px; }
+        p { color: #666; margin-bottom: 30px; }
+        .login-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.3s;
+        }
+        .login-btn:hover { transform: translateY(-2px); }
+        .auth-code-section { display: none; margin-top: 20px; }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .submit-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 14px;
+        }
+        .error { color: #dc3545; margin-top: 10px; display: none; }
+        .success { color: #28a745; margin-top: 10px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">TT</div>
+        <h1>Trading Terminal</h1>
+        <p>NorenOMS API Integration</p>
+        
+        <button class="login-btn" onclick="initiateLogin()">
+            Login with Shoonya
+        </button>
+        
+        <div class="auth-code-section" id="authSection">
+            <h3>Enter Authorization Code</h3>
+            <p style="font-size: 12px; color: #666;">
+                Login complete होने के बाद redirect URL से auth code copy करें
+            </p>
+            <input type="text" id="authCode" placeholder="Enter auth code here">
+            <button class="submit-btn" onclick="submitAuthCode()">
+                Authenticate
+            </button>
+        </div>
+        
+        <div class="error" id="errorMessage"></div>
+        <div class="success" id="successMessage"></div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        let loginWindow = null;
+        
+        async function initiateLogin() {
+            try {
+                const response = await fetch(`${API_URL}/login-url`);
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    loginWindow = window.open(data.url, 'Login', 'width=600,height=600');
+                    document.getElementById('authSection').style.display = 'block';
+                    document.getElementById('successMessage').textContent = 'Login window opened. Complete login to get auth code.';
+                    document.getElementById('successMessage').style.display = 'block';
+                } else {
+                    showError(data.message);
+                }
+            } catch (error) {
+                showError('Failed to initiate login: ' + error.message);
+            }
+        }
+        
+        async function submitAuthCode() {
+            const authCode = document.getElementById('authCode').value.trim();
+            
+            if (!authCode) {
+                showError('Please enter auth code');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/authenticate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Session-ID': 'user-session-1'
+                    },
+                    body: JSON.stringify({ auth_code: authCode })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    document.getElementById('successMessage').textContent = 'Authentication successful! Redirecting...';
+                    document.getElementById('successMessage').style.display = 'block';
+                    
+                    localStorage.setItem('session_id', 'user-session-1');
+                    localStorage.setItem('access_token', data.access_token);
+                    
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1000);
+                } else {
+                    showError(data.message || 'Authentication failed');
+                }
+            } catch (error) {
+                showError('Failed to authenticate: ' + error.message);
+            }
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('successMessage').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

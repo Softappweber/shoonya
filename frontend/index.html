@@ -78,19 +78,13 @@
         <h1>Trading Terminal</h1>
         <p>NorenOMS API Integration</p>
         
-        <button class="login-btn" onclick="initiateLogin()">
-            Login with Shoonya
-        </button>
+        <button class="login-btn" onclick="initiateLogin()">Login with Shoonya</button>
         
         <div class="auth-code-section" id="authSection">
             <h3>Enter Authorization Code</h3>
-            <p style="font-size: 12px; color: #666;">
-                Login complete होने के बाद redirect URL से auth code copy करें
-            </p>
+            <p style="font-size: 12px; color: #666;">Login complete होने के बाद redirect URL से auth code copy करें</p>
             <input type="text" id="authCode" placeholder="Enter auth code here">
-            <button class="submit-btn" onclick="submitAuthCode()">
-                Authenticate
-            </button>
+            <button class="submit-btn" onclick="submitAuthCode()">Authenticate</button>
         </div>
         
         <div class="error" id="errorMessage"></div>
@@ -98,7 +92,7 @@
     </div>
     
     <script>
-        const API_URL = 'http://localhost:5000/api';
+        const API_URL = window.location.origin + '/api';
         let loginWindow = null;
         
         async function initiateLogin() {
@@ -121,34 +115,22 @@
         
         async function submitAuthCode() {
             const authCode = document.getElementById('authCode').value.trim();
-            
-            if (!authCode) {
-                showError('Please enter auth code');
-                return;
-            }
+            if (!authCode) { showError('Please enter auth code'); return; }
             
             try {
                 const response = await fetch(`${API_URL}/authenticate`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Session-ID': 'user-session-1'
-                    },
+                    headers: { 'Content-Type': 'application/json', 'X-Session-ID': 'user-session-1' },
                     body: JSON.stringify({ auth_code: authCode })
                 });
-                
                 const data = await response.json();
                 
                 if (data.status === 'success') {
                     document.getElementById('successMessage').textContent = 'Authentication successful! Redirecting...';
                     document.getElementById('successMessage').style.display = 'block';
-                    
                     localStorage.setItem('session_id', 'user-session-1');
                     localStorage.setItem('access_token', data.access_token);
-                    
-                    setTimeout(() => {
-                        window.location.href = 'dashboard.html';
-                    }, 1000);
+                    setTimeout(() => { window.location.href = '/dashboard'; }, 1000);
                 } else {
                     showError(data.message || 'Authentication failed');
                 }
